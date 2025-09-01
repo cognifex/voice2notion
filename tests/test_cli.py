@@ -17,22 +17,29 @@ def reload_cli(monkeypatch, keyboard_module):
 def test_prompt_hotkey_with_keyboard(monkeypatch, capsys):
     called: dict[str, bool] = {}
 
-    def read_hotkey(*, suppress=False):
-        called["read_hotkey"] = suppress
-        return "ctrl+h"
+    def record(stop):
+        called["record"] = stop
+        return [
+            types.SimpleNamespace(event_type="down", name="ctrl"),
+            types.SimpleNamespace(event_type="down", name="h"),
+            types.SimpleNamespace(event_type="up", name="h"),
+            types.SimpleNamespace(event_type="up", name="ctrl"),
+            types.SimpleNamespace(event_type="down", name="enter"),
+            types.SimpleNamespace(event_type="up", name="enter"),
+        ]
 
-    def read_key(*, suppress=False):
-        called["read_key"] = suppress
-        return "enter"
+    def get_hotkey_name(names):
+        return "+".join(names)
 
     dummy_keyboard = types.SimpleNamespace(
-        read_hotkey=read_hotkey, read_key=read_key, _pressed_events=set()
+        record=record,
+        get_hotkey_name=get_hotkey_name,
+        _pressed_events=set(),
     )
     cli_mod = reload_cli(monkeypatch, dummy_keyboard)
     result = cli_mod.prompt_hotkey("Toggle hotkey", "ctrl+a")
     assert result == "ctrl+h"
-    assert called["read_hotkey"] is True
-    assert called["read_key"] is True
+    assert called["record"] == "enter"
     out = capsys.readouterr().out
     assert "Toggle hotkey [ctrl+a] (press hotkey, then ENTER to confirm):" in out
     assert "ctrl+h" in out
@@ -41,22 +48,22 @@ def test_prompt_hotkey_with_keyboard(monkeypatch, capsys):
 def test_prompt_hotkey_enter_keeps_current(monkeypatch, capsys):
     called = {}
 
-    def read_hotkey(*, suppress=False):
-        called["read_hotkey"] = suppress
-        return "enter"
-
-    def read_key(*, suppress=False):
-        called["read_key"] = suppress
-        return "enter"
+    def record(stop):
+        called["record"] = stop
+        return [
+            types.SimpleNamespace(event_type="down", name="enter"),
+            types.SimpleNamespace(event_type="up", name="enter"),
+        ]
 
     dummy_keyboard = types.SimpleNamespace(
-        read_hotkey=read_hotkey, read_key=read_key, _pressed_events=set()
+        record=record,
+        get_hotkey_name=lambda names: "+".join(names),
+        _pressed_events=set(),
     )
     cli_mod = reload_cli(monkeypatch, dummy_keyboard)
     result = cli_mod.prompt_hotkey("Toggle hotkey", "ctrl+a")
     assert result == "ctrl+a"
-    assert called["read_hotkey"] is True
-    assert "read_key" not in called
+    assert called["record"] == "enter"
 
 
 def test_prompt_hotkey_fallback(monkeypatch):
