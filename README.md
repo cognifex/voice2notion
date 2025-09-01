@@ -14,12 +14,26 @@ corrections.
 * Persistent configuration for hotkeys, model names and chunk length
 * Helper to package the tool as a standalone Windows executable
 
+## Installation
+
+Install the Python dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
 ## Usage
 
 ```bash
 python -m cursor_tool --configure  # set up hotkeys and model names
 python -m cursor_tool              # start the recorder and transcriber
 ```
+
+When configuring, press the desired key combinations (or hit Enter to keep
+the current value) and the chosen hotkeys will be displayed in a readable
+form. If the ``keyboard`` package is unavailable, you can type the
+shortcuts manually and the tool falls back to ``pynput`` for handling
+them.
 
 The default configuration is stored in ``~/.cursor_tool.json``.  During
 runtime the fast model's output is injected directly at the cursor while

@@ -26,6 +26,11 @@ try:  # pragma: no cover
 except Exception:  # pragma: no cover
     keyboard = None  # type: ignore
 
+try:  # pragma: no cover
+    from pynput import keyboard as pynput_keyboard
+except Exception:  # pragma: no cover
+    pynput_keyboard = None  # type: ignore
+
 
 class Recorder:
     """Manage an input stream and hotkey registration."""
@@ -37,6 +42,7 @@ class Recorder:
         self.queue: "queue.Queue[bytes | None]" = queue.Queue()
         self._stream: Optional[sd.InputStream] = None
         self.is_recording = False
+        self._hold_active = False
 
     def _callback(self, indata, frames, time, status) -> None:  # pragma: no cover - called by sounddevice
         """Receive audio frames from ``sounddevice`` and enqueue them."""
@@ -82,13 +88,46 @@ class Recorder:
 
     def register_hotkeys(self, toggle: str, hold: Optional[str] = None) -> None:
         """Register global hotkeys for controlling the recorder."""
+        if keyboard is not None:
+            keyboard.add_hotkey(toggle, self.toggle_recording)
+            if hold:
+                keyboard.on_press_key(hold, lambda _: self.start_recording())
+                keyboard.on_release_key(hold, lambda _: self.stop_recording())
+            return
 
-        if keyboard is None:  # pragma: no cover
+        if pynput_keyboard is None:  # pragma: no cover
             raise RuntimeError("keyboard not available")
-        keyboard.add_hotkey(toggle, self.toggle_recording)
-        if hold:
-            keyboard.on_press_key(hold, lambda _: self.start_recording())
-            keyboard.on_release_key(hold, lambda _: self.stop_recording())
+
+        def parse(combo: str) -> set:
+            keys = set()
+            for part in combo.split("+"):
+                name = part.strip().lower()
+                try:
+                    keys.add(getattr(pynput_keyboard.Key, name))
+                except AttributeError:
+                    keys.add(pynput_keyboard.KeyCode.from_char(name))
+            return keys
+
+        toggle_keys = parse(toggle)
+        hold_keys = parse(hold) if hold else None
+        pressed: set = set()
+
+        def on_press(key):
+            pressed.add(key)
+            if toggle_keys <= pressed:
+                self.toggle_recording()
+            if hold_keys and hold_keys <= pressed and not self.is_recording:
+                self.start_recording()
+                self._hold_active = True
+
+        def on_release(key):
+            pressed.discard(key)
+            if hold_keys and self._hold_active and not hold_keys <= pressed:
+                self._hold_active = False
+                self.stop_recording()
+
+        self._listener = pynput_keyboard.Listener(on_press=on_press, on_release=on_release)
+        self._listener.start()
 
 
 recorder = Recorder()
