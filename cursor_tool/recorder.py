@@ -31,6 +31,8 @@ try:  # pragma: no cover
 except Exception:  # pragma: no cover
     pynput_keyboard = None  # type: ignore
 
+from .hotkeys import normalize_hotkey
+
 
 class Recorder:
     """Manage an input stream and hotkey registration."""
@@ -88,11 +90,14 @@ class Recorder:
 
     def register_hotkeys(self, toggle: str, hold: Optional[str] = None) -> None:
         """Register global hotkeys for controlling the recorder."""
+        toggle = normalize_hotkey(toggle)
+        hold = normalize_hotkey(hold) if hold else None
+
         if keyboard is not None:
             keyboard.add_hotkey(toggle, self.toggle_recording)
             if hold:
-                keyboard.on_press_key(hold, lambda _: self.start_recording())
-                keyboard.on_release_key(hold, lambda _: self.stop_recording())
+                keyboard.add_hotkey(hold, self.start_recording)
+                keyboard.add_hotkey(hold, self.stop_recording, trigger_on_release=True)
             return
 
         if pynput_keyboard is None:  # pragma: no cover
