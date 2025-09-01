@@ -15,3 +15,8 @@ def test_is_text_field_focused_true(monkeypatch):
 def test_is_text_field_focused_false(monkeypatch):
     monkeypatch.setattr(aw, "_get_foreground_class", lambda: "Button", raising=False)
     assert not is_text_field_focused()
+
+
+def test_is_text_field_focused_browser(monkeypatch):
+    monkeypatch.setattr(aw, "_get_foreground_class", lambda: "Chrome_WidgetWin_1", raising=False)
+    assert is_text_field_focused()

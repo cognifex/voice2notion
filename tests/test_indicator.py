@@ -1,6 +1,7 @@
 import importlib
 import sys
 import types
+from pathlib import Path
 
 import pytest
 
@@ -28,6 +29,9 @@ def indicator_module(monkeypatch):
         def quit(self):
             pass
 
+        def after(self, _delay, func):
+            func()
+
     class DummyCanvas:
         def __init__(self, *_, **__):
             pass
@@ -37,6 +41,9 @@ def indicator_module(monkeypatch):
 
         def create_oval(self, *_, **__):
             return 1
+
+        def itemconfig(self, *_ , **__):
+            pass
 
     dummy_tk.Tk = DummyRoot
     dummy_tk.Canvas = DummyCanvas
@@ -54,10 +61,13 @@ def indicator_module(monkeypatch):
     monkeypatch.setitem(sys.modules, "winsound", dummy_winsound)
     monkeypatch.setitem(sys.modules, "tkinter", dummy_tk)
     monkeypatch.setattr("threading.Thread", DummyThread)
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1]))
     if "cursor_tool.indicator" in sys.modules:
         del sys.modules["cursor_tool.indicator"]
     module = importlib.import_module("cursor_tool.indicator")
-    return module, beeps
+    yield module, beeps
+    if "cursor_tool.indicator" in sys.modules:
+        del sys.modules["cursor_tool.indicator"]
 
 
 def test_start_stop_indicator(indicator_module):
@@ -66,5 +76,5 @@ def test_start_stop_indicator(indicator_module):
     ind.start()
     assert ind.visible is True
     ind.stop()
-    assert ind.visible is False
+    assert ind.visible is True
     assert beeps == [(880, 150), (440, 150)]

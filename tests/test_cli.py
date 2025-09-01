@@ -70,8 +70,11 @@ def test_run_prints_status(monkeypatch, capsys):
     monkeypatch.setattr(
         cli_mod, "transcribe_from_recorder", lambda rec, transcriber: "result"
     )
+    called = {}
+    monkeypatch.setattr(cli_mod.indicator, "show", lambda: called.setdefault("show", True))
     text = cli_mod.run()
     assert text == "result"
+    assert called["show"] is True
     out = capsys.readouterr().out
     assert "Loading models" in out
     assert "Press ctrl+t" in out

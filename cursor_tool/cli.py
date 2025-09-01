@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Optional
+import logging
 
 try:  # pragma: no cover - used only when configuring hotkeys
     import keyboard
@@ -23,6 +24,7 @@ from .recorder import recorder, register_hotkeys
 from .transcriber import DoubleTranscriber, Model
 from .typer import insert_text
 from .models import load_faster_whisper
+from .indicator import indicator
 
 
 def _flush_stdin() -> None:
@@ -101,13 +103,21 @@ def configure(
     return cfg
 
 
-def run(fast_model: Model | None = None, precise_model: Model | None = None) -> str:
+def run(
+    fast_model: Model | None = None,
+    precise_model: Model | None = None,
+    *,
+    verbose: bool = False,
+) -> str:
     """Load config, register hotkeys and process audio once recording stops."""
 
+    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     cfg = Config.load()
+    logging.debug("configuration loaded: %s", cfg)
     print("Loading models...", flush=True)
     fast = fast_model or load_faster_whisper(cfg.fast_model)
     precise = precise_model or load_faster_whisper(cfg.precise_model)
+    indicator.show()
     register_hotkeys(cfg.toggle_key, cfg.hold_key)
     msg = f"Press {cfg.toggle_key} to start/stop recording"
     if cfg.hold_key and cfg.hold_key != cfg.toggle_key:

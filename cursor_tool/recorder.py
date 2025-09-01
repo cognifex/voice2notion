@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import queue
 from typing import Optional
+import logging
 
 try:  # pragma: no cover - these are patched in tests
     import sounddevice as sd
@@ -32,6 +33,7 @@ except Exception:  # pragma: no cover
     pynput_keyboard = None  # type: ignore
 
 from .hotkeys import normalize_hotkey
+from .indicator import indicator
 
 
 class Recorder:
@@ -66,6 +68,8 @@ class Recorder:
         )
         self._stream.start()
         self.is_recording = True
+        logging.debug("recording started")
+        indicator.start()
 
     def stop_recording(self) -> None:
         """Stop and close the microphone stream."""
@@ -77,6 +81,8 @@ class Recorder:
             self._stream.close()
             self._stream = None
         self.is_recording = False
+        logging.debug("recording stopped")
+        indicator.stop()
         # Signal consumers that no more audio will arrive
         self.queue.put(None)
 
@@ -92,6 +98,7 @@ class Recorder:
         """Register global hotkeys for controlling the recorder."""
         toggle = normalize_hotkey(toggle)
         hold = normalize_hotkey(hold) if hold else None
+        logging.debug("register hotkeys toggle=%s hold=%s", toggle, hold)
 
         if keyboard is not None:
             keyboard.add_hotkey(toggle, self.toggle_recording)
