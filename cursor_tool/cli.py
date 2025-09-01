@@ -12,6 +12,11 @@ from pathlib import Path
 from typing import Optional
 import logging
 
+try:  # ``keyboard`` captures key combinations globally
+    import keyboard  # type: ignore
+except Exception:  # pragma: no cover - fallback when unavailable
+    keyboard = None
+
 from .config import Config
 from .hotkeys import normalize_hotkey, is_valid_hotkey
 from .pipeline import transcribe_from_recorder
@@ -41,20 +46,35 @@ def _flush_stdin() -> None:
 
 
 def prompt_hotkey(label: str, current: str) -> str:
-    """Prompt the user for a hotkey string.
+    """Prompt the user to press a hotkey combination.
 
-    Users type combinations such as ``ctrl+shift+space``.  Localised key names
-    like ``strg`` or ``umschalt`` are accepted and normalised.  The prompt keeps
-    asking until a non-modifier key is included.
+    The user presses the desired keys and the combination is normalised.  Press
+    Enter to keep the current value.  The prompt repeats until a non-modifier
+    key is included.
     """
 
     while True:
-        _flush_stdin()
-        raw = input(f"{label} [{current}]: ")
-        hotkey = normalize_hotkey(raw or current)
+        print(
+            f"{label} [{current}] (press combination or Enter to keep): ",
+            end="",
+            flush=True,
+        )
+        if keyboard:
+            combo = keyboard.read_hotkey(suppress=True)
+            if combo == "enter":
+                print(current)
+                return current
+        else:  # pragma: no cover - typically handled via ``keyboard``
+            _flush_stdin()
+            combo = input()
+            if not combo:
+                print(current)
+                return current
+        hotkey = normalize_hotkey(combo)
         if is_valid_hotkey(hotkey):
+            print(hotkey)
             return hotkey
-        print("Please include a non-modifier key (e.g. ctrl+shift+s).", flush=True)
+        print("Please include a non-modifier key (e.g. ctrl+shift+s).")
 
 
 def configure(
