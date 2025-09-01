@@ -5,6 +5,8 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Optional
 
+from .hotkeys import normalize_hotkey, is_modifier_combo
+
 DEFAULT_TOGGLE = "ctrl+shift+space"
 DEFAULT_HOLD = "ctrl+space"
 DEFAULT_FAST_MODEL = "tiny"
@@ -36,8 +38,17 @@ class Config:
         cfg_path = path or default_config_path()
         if cfg_path.exists():
             data = json.loads(cfg_path.read_text("utf-8"))
-            return cls(**{**asdict(cls()), **data})  # type: ignore[arg-type]
-        return cls()
+            cfg = cls(**{**asdict(cls()), **data})  # type: ignore[arg-type]
+        else:
+            cfg = cls()
+
+        cfg.toggle_key = normalize_hotkey(cfg.toggle_key)
+        cfg.hold_key = normalize_hotkey(cfg.hold_key)
+        if is_modifier_combo(cfg.toggle_key):
+            cfg.toggle_key = DEFAULT_TOGGLE
+        if is_modifier_combo(cfg.hold_key):
+            cfg.hold_key = DEFAULT_HOLD
+        return cfg
 
     def save(self, path: Optional[Path] = None) -> None:
         """Write configuration to *path* or default location."""
