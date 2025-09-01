@@ -26,6 +26,9 @@ KEY_ALIASES = {
     "meta": "windows",
 }
 
+# set of modifier keys that may appear in hotkey definitions
+MODIFIER_KEYS = {"ctrl", "shift", "alt", "alt gr", "windows"}
+
 
 def _normalize_part(part: str) -> Optional[str]:
     """Return normalised version of *part* or ``None`` if invalid."""
@@ -48,3 +51,10 @@ def normalize_hotkey(hotkey: str | Iterable[str]) -> str:
         if norm:
             normalized.append(norm)
     return "+".join(normalized)
+
+
+def is_modifier_combo(hotkey: str) -> bool:
+    """Return ``True`` if *hotkey* contains only modifier keys."""
+
+    parts = normalize_hotkey(hotkey).split("+") if hotkey else []
+    return bool(parts) and all(part in MODIFIER_KEYS for part in parts)

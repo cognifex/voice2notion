@@ -58,15 +58,16 @@ def prompt_hotkey(label: str, current: str) -> str:
         # Fallback to manual typing when ``keyboard`` isn't installed
         return normalize_hotkey(input(f"{label} [{current}]: ") or current)
 
-    print(f"{label} [{current}]: ", end="", flush=True)
-    hotkey = keyboard.read_hotkey(suppress=False)
-    if hotkey == "enter":
+    print(f"{label} [{current}] (press keys then Enter): ", end="", flush=True)
+    events = keyboard.record(until="enter", suppress=True)
+    combo = keyboard.get_hotkey_name(events[:-1])
+    if not combo:
         print()
         return current
 
-    print(hotkey)
+    print(combo)
     _flush_stdin()
-    return normalize_hotkey(hotkey)
+    return normalize_hotkey(combo)
 
 
 def configure(
@@ -86,8 +87,8 @@ def configure(
         _flush_stdin()
         return input(f"{label} [{current}]: ") or current
 
-    toggle_key = normalize_hotkey(toggle_key or prompt_hotkey("Toggle hotkey", cfg.toggle_key))
-    hold_key = normalize_hotkey(hold_key or prompt_hotkey("Hold hotkey", cfg.hold_key))
+    toggle_key = toggle_key or prompt_hotkey("Toggle hotkey", cfg.toggle_key)
+    hold_key = hold_key or prompt_hotkey("Hold hotkey", cfg.hold_key)
     fast_model = fast_model or prompt("Fast model", cfg.fast_model)
     precise_model = precise_model or prompt("Precise model", cfg.precise_model)
     if chunk_seconds is None:

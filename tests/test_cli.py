@@ -17,12 +17,15 @@ def reload_cli(monkeypatch, keyboard_module):
 
 def test_prompt_hotkey_with_keyboard(monkeypatch, capsys):
 
-    dummy_keyboard = types.SimpleNamespace(read_hotkey=lambda suppress=False: "ctrl+h")
+    dummy_keyboard = types.SimpleNamespace(
+        record=lambda until="enter", suppress=True: ["ctrl+h", "enter"],
+        get_hotkey_name=lambda events: events[0],
+    )
     cli_mod = reload_cli(monkeypatch, dummy_keyboard)
     result = cli_mod.prompt_hotkey("Toggle hotkey", "ctrl+a")
     assert result == "ctrl+h"
     out = capsys.readouterr().out
-    assert "Toggle hotkey [ctrl+a]:" in out
+    assert "Toggle hotkey [ctrl+a]" in out
     assert "ctrl+h" in out
 
 def test_prompt_hotkey_fallback(monkeypatch):
@@ -31,22 +34,17 @@ def test_prompt_hotkey_fallback(monkeypatch):
     assert cli_mod.prompt_hotkey("Toggle hotkey", "ctrl+a") == "ctrl+y"
 
 
-def test_configure_consumes_trailing_enter(monkeypatch, tmp_path):
-    hotkeys = iter(["ctrl+t", "ctrl+h"])
-    dummy_keyboard = types.SimpleNamespace(read_hotkey=lambda suppress=False: next(hotkeys))
+def test_configure_updates_values(monkeypatch, tmp_path):
+    hotkeys = iter([["ctrl+t", "enter"], ["ctrl+h", "enter"]])
+    dummy_keyboard = types.SimpleNamespace(
+        record=lambda until="enter", suppress=True: next(hotkeys),
+        get_hotkey_name=lambda events: events[0],
+    )
     cli_mod = reload_cli(monkeypatch, dummy_keyboard)
 
-    stdin = StringIO("\nfast\nprecise\n4\n\n")
+    stdin = StringIO("fast\nprecise\n4\n\n")
     monkeypatch.setattr(sys, "stdin", stdin)
-
-    calls = {"n": 0}
-
-    def fake_flush():
-        if calls["n"] == 2:
-            stdin.read(1)
-        calls["n"] += 1
-
-    monkeypatch.setattr(cli_mod, "_flush_stdin", fake_flush)
+    monkeypatch.setattr(cli_mod, "_flush_stdin", lambda: None)
 
     cfg = cli_mod.configure(path=tmp_path / "cfg.json")
 

@@ -32,7 +32,7 @@ try:  # pragma: no cover
 except Exception:  # pragma: no cover
     pynput_keyboard = None  # type: ignore
 
-from .hotkeys import normalize_hotkey
+from .hotkeys import normalize_hotkey, is_modifier_combo
 from .indicator import indicator
 
 
@@ -100,7 +100,13 @@ class Recorder:
         hold = normalize_hotkey(hold) if hold else None
         logging.debug("register hotkeys toggle=%s hold=%s", toggle, hold)
 
-        if keyboard is not None:
+        use_keyboard = (
+            keyboard is not None
+            and not is_modifier_combo(toggle)
+            and not (hold and is_modifier_combo(hold))
+        )
+
+        if use_keyboard:
             keyboard.add_hotkey(
                 toggle, self.toggle_recording, suppress=True, trigger_on_release=True
             )

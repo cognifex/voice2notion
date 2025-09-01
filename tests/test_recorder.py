@@ -83,6 +83,10 @@ def test_pynput_fallback(monkeypatch):
             pass
 
     class DummyKeyboard(types.SimpleNamespace):
+        class Key:
+            ctrl = "ctrl"
+            shift = "shift"
+
         class KeyCode:
             @staticmethod
             def from_char(c):
@@ -126,5 +130,63 @@ def test_pynput_fallback(monkeypatch):
     callbacks["press"]("b")
     assert module.recorder.is_recording is True
     callbacks["release"]("b")
+    assert module.recorder.is_recording is False
+
+
+def test_modifier_only_uses_pynput(monkeypatch):
+    callbacks: dict[str, types.FunctionType] = {}
+
+    class DummyListener:
+        def __init__(self, on_press=None, on_release=None):
+            callbacks["press"] = on_press
+            callbacks["release"] = on_release
+
+        def start(self):
+            pass
+
+    class DummyKeyboard(types.SimpleNamespace):
+        class KeyCode:
+            @staticmethod
+            def from_char(c):
+                return c
+
+        Listener = DummyListener
+
+    fake_pynput = types.ModuleType("pynput")
+    fake_pynput.keyboard = DummyKeyboard
+
+    dummy_keyboard = types.SimpleNamespace(
+        add_hotkey=lambda *a, **k: (_ for _ in ()).throw(RuntimeError("should use pynput"))
+    )
+
+    class DummyStream:
+        def __init__(self, *a, **k):
+            pass
+
+        def start(self):
+            pass
+
+        def stop(self):
+            pass
+
+        def close(self):
+            pass
+
+    monkeypatch.setitem(sys.modules, "pynput", fake_pynput)
+    monkeypatch.setitem(sys.modules, "keyboard", dummy_keyboard)
+    monkeypatch.setitem(sys.modules, "sounddevice", types.SimpleNamespace(InputStream=DummyStream))
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1]))
+    if "cursor_tool.recorder" in sys.modules:
+        del sys.modules["cursor_tool.recorder"]
+    module = importlib.import_module("cursor_tool.recorder")
+
+    module.register_hotkeys("ctrl+shift")
+    callbacks["press"]("ctrl")
+    callbacks["press"]("shift")
+    assert module.recorder.is_recording is True
+    callbacks["release"]("ctrl")
+    callbacks["release"]("shift")
+    callbacks["press"]("ctrl")
+    callbacks["press"]("shift")
     assert module.recorder.is_recording is False
 
