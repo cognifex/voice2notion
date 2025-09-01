@@ -23,6 +23,10 @@ EDIT_CLASSES: Iterable[str] = {
     "Edit",
     "RichEdit20A",
     "RichEdit20W",
+    # common top-level windows that often host editable fields
+    "Chrome_WidgetWin_1",  # Chrome/Edge
+    "MozillaWindowClass",  # Firefox
+    "Notepad",
 }
 
 

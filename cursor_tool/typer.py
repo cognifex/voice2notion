@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 try:  # pragma: no cover - patched in tests
     import keyboard
 except Exception:  # pragma: no cover
@@ -25,7 +27,9 @@ def insert_text(text: str) -> None:
     """
 
     if not is_text_field_focused():  # pragma: no branch - simple guard
+        logging.debug("no text field focused; skipping insertion")
         return
+    logging.debug("inserting text: %r", text)
     if keyboard is not None:
         keyboard.write(text)
         return

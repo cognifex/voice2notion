@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Optional
+import logging
 
 try:  # pragma: no cover - used only when configuring hotkeys
     import keyboard
@@ -17,20 +18,45 @@ except Exception:  # pragma: no cover
     keyboard = None  # type: ignore
 
 from .config import Config
+from .hotkeys import normalize_hotkey
 from .pipeline import transcribe_from_recorder
 from .recorder import recorder, register_hotkeys
 from .transcriber import DoubleTranscriber, Model
 from .typer import insert_text
 from .models import load_faster_whisper
+from .indicator import indicator
+
+
+def _flush_stdin() -> None:
+    """Best-effort removal of pending characters from ``stdin``."""
+
+    try:  # Windows
+        import msvcrt
+
+        while msvcrt.kbhit():
+            msvcrt.getwch()
+    except Exception:
+        try:  # POSIX
+            import sys
+            import termios
+
+            termios.tcflush(sys.stdin, termios.TCIFLUSH)
+        except Exception:
+            pass
 
 
 def prompt_hotkey(label: str, current: str) -> str:
+    """Prompt the user for a hotkey and normalise the result.
 
-    """Prompt user to press a hotkey and return its string representation."""
+    The function prefers ``keyboard.read_hotkey`` so the user can simply press
+    the desired combination.  When ``keyboard`` isn't available or the user
+    types a value manually we still normalise common localised key names such as
+    ``strg`` or ``umschalt``.
+    """
 
     if keyboard is None:
         # Fallback to manual typing when ``keyboard`` isn't installed
-        return input(f"{label} [{current}]: ") or current
+        return normalize_hotkey(input(f"{label} [{current}]: ") or current)
 
     print(f"{label} [{current}]: ", end="", flush=True)
     hotkey = keyboard.read_hotkey(suppress=False)
@@ -39,7 +65,8 @@ def prompt_hotkey(label: str, current: str) -> str:
         return current
 
     print(hotkey)
-    return hotkey
+    _flush_stdin()
+    return normalize_hotkey(hotkey)
 
 
 def configure(
@@ -55,10 +82,11 @@ def configure(
     cfg = Config.load(path)
 
     def prompt(label: str, current: str) -> str:
+        _flush_stdin()
         return input(f"{label} [{current}]: ") or current
 
-    toggle_key = toggle_key or prompt_hotkey("Toggle hotkey", cfg.toggle_key)
-    hold_key = hold_key or prompt_hotkey("Hold hotkey", cfg.hold_key)
+    toggle_key = normalize_hotkey(toggle_key or prompt_hotkey("Toggle hotkey", cfg.toggle_key))
+    hold_key = normalize_hotkey(hold_key or prompt_hotkey("Hold hotkey", cfg.hold_key))
     fast_model = fast_model or prompt("Fast model", cfg.fast_model)
     precise_model = precise_model or prompt("Precise model", cfg.precise_model)
     if chunk_seconds is None:
@@ -76,14 +104,33 @@ def configure(
     return cfg
 
 
-def run(fast_model: Model | None = None, precise_model: Model | None = None) -> str:
+def run(
+    fast_model: Model | None = None,
+    precise_model: Model | None = None,
+    *,
+    verbose: bool = False,
+) -> str:
     """Load config, register hotkeys and process audio once recording stops."""
 
+    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     cfg = Config.load()
-    register_hotkeys(cfg.toggle_key, cfg.hold_key)
+    logging.debug("configuration loaded: %s", cfg)
+    print("Loading models...", flush=True)
     fast = fast_model or load_faster_whisper(cfg.fast_model)
     precise = precise_model or load_faster_whisper(cfg.precise_model)
+    indicator.show()
+    register_hotkeys(cfg.toggle_key, cfg.hold_key)
+    msg = f"Press {cfg.toggle_key} to start/stop recording"
+    if cfg.hold_key and cfg.hold_key != cfg.toggle_key:
+        msg += f" or hold {cfg.hold_key} to talk"
+    print(msg + ".")
     transcriber = DoubleTranscriber(fast, precise, on_fast=insert_text)
+<<<<<<< HEAD
     hold_msg = f" or hold {cfg.hold_key}" if cfg.hold_key else ""
     print(f"Ready. Press {cfg.toggle_key} to start/stop recording{hold_msg}.")
     return transcribe_from_recorder(recorder, transcriber)
+=======
+    text = transcribe_from_recorder(recorder, transcriber)
+    print(text)
+    return text
+>>>>>>> 11d373d (Applying previous commit)
