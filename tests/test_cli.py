@@ -1,4 +1,5 @@
 from io import StringIO
+import types
 
 import pytest
 
@@ -6,17 +7,30 @@ from cursor_tool import cli
 
 
 def test_prompt_hotkey_normalizes(monkeypatch):
+    monkeypatch.setattr(cli, "keyboard", None)
     monkeypatch.setattr("builtins.input", lambda prompt="": "strg+y")
     assert cli.prompt_hotkey("Toggle hotkey", "ctrl+a") == "ctrl+y"
 
 
 def test_prompt_hotkey_reprompts_invalid(monkeypatch):
+    monkeypatch.setattr(cli, "keyboard", None)
     inputs = iter(["ctrl+shift", "ctrl+h"])
     monkeypatch.setattr("builtins.input", lambda prompt="": next(inputs))
     assert cli.prompt_hotkey("Toggle hotkey", "ctrl+a") == "ctrl+h"
 
 
+def test_prompt_hotkey_with_keyboard(monkeypatch, capsys):
+    hotkeys = iter(["ctrl+shift", "ctrl+h"])
+    dummy_keyboard = types.SimpleNamespace(read_hotkey=lambda suppress=True: next(hotkeys))
+    monkeypatch.setattr(cli, "keyboard", dummy_keyboard)
+    result = cli.prompt_hotkey("Toggle hotkey", "ctrl+a")
+    assert result == "ctrl+h"
+    out = capsys.readouterr().out
+    assert "Please include a non-modifier key" in out
+
+
 def test_configure_reads_values(monkeypatch, tmp_path):
+    monkeypatch.setattr(cli, "keyboard", None)
     stdin = StringIO("ctrl+t\nctrl+h\nfast\nprecise\n4\nde\n")
     monkeypatch.setattr("builtins.input", lambda prompt="": stdin.readline().rstrip("\n"))
     cfg = cli.configure(path=tmp_path / "cfg.json")

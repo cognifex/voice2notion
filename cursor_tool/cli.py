@@ -12,6 +12,11 @@ from pathlib import Path
 from typing import Optional
 import logging
 
+try:  # pragma: no cover - keyboard may be unavailable on some systems
+    import keyboard  # type: ignore
+except Exception:  # pragma: no cover
+    keyboard = None  # type: ignore
+
 from .config import Config
 from .hotkeys import normalize_hotkey, is_valid_hotkey
 from .pipeline import transcribe_from_recorder
@@ -41,19 +46,34 @@ def _flush_stdin() -> None:
 
 
 def prompt_hotkey(label: str, current: str) -> str:
-    """Prompt the user to enter a hotkey combination.
+    """Prompt the user for a hotkey and return a normalised combination.
 
-    The user types a combination like ``ctrl+shift+s`` (localised key names such
-    as ``strg`` or ``umschalt`` are recognised).  Press Enter to keep the
-    current value.  The prompt repeats until a non-modifier key is included.
+    When the optional :mod:`keyboard` dependency is available the user can press
+    the desired combination directly.  Otherwise they may type it manually.  The
+    prompt loops until a non-modifier key is included so we never persist values
+    like ``ctrl+shift`` which would later crash the keyboard hook.
     """
 
     while True:
-        _flush_stdin()
-        value = input(
-            f"{label} [{current}] (type combination or Enter to keep): "
-        ) or current
-        hotkey = normalize_hotkey(value)
+        if keyboard is None:
+            _flush_stdin()
+            raw = input(
+                f"{label} [{current}] (type combination or Enter to keep): "
+            ) or current
+        else:
+            print(
+                f"{label} [{current}] (press combination or Enter to keep): ",
+                end="",
+                flush=True,
+            )
+            raw = keyboard.read_hotkey(suppress=True)
+            if raw == "enter":
+                print()
+                raw = current
+            else:
+                print(raw)
+            _flush_stdin()
+        hotkey = normalize_hotkey(raw)
         if is_valid_hotkey(hotkey):
             return hotkey
         print("Please include a non-modifier key (e.g. ctrl+shift+s).")
