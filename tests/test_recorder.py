@@ -76,3 +76,61 @@ def test_hotkey_callbacks(recorder_module):
     callbacks["release"](None)
     assert module.recorder.is_recording is False
 
+
+def test_pynput_fallback(monkeypatch):
+    callbacks: dict[str, types.FunctionType] = {}
+
+    class DummyListener:
+        def __init__(self, on_press=None, on_release=None):
+            callbacks["press"] = on_press
+            callbacks["release"] = on_release
+
+        def start(self):
+            pass
+
+    class DummyKeyboard(types.SimpleNamespace):
+        class KeyCode:
+            @staticmethod
+            def from_char(c):
+                return c
+
+        Listener = DummyListener
+
+    fake_pynput = types.ModuleType("pynput")
+    fake_pynput.keyboard = DummyKeyboard
+
+    monkeypatch.setitem(sys.modules, "pynput", fake_pynput)
+    monkeypatch.setitem(sys.modules, "keyboard", None)
+
+    class DummyStream:
+        def __init__(self, *a, **k):
+            pass
+
+        def start(self):
+            pass
+
+        def stop(self):
+            pass
+
+        def close(self):
+            pass
+
+    monkeypatch.setitem(sys.modules, "sounddevice", types.SimpleNamespace(InputStream=DummyStream))
+    monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1]))
+    if "cursor_tool.recorder" in sys.modules:
+        del sys.modules["cursor_tool.recorder"]
+    module = importlib.import_module("cursor_tool.recorder")
+
+    module.register_hotkeys("a", "b")
+    callbacks["press"]("a")
+    assert module.recorder.is_recording is True
+    callbacks["release"]("a")
+    callbacks["press"]("a")
+    assert module.recorder.is_recording is False
+    callbacks["release"]("a")
+
+    callbacks["press"]("b")
+    assert module.recorder.is_recording is True
+    callbacks["release"]("b")
+    assert module.recorder.is_recording is False
+
