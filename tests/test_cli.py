@@ -15,19 +15,34 @@ def reload_cli(monkeypatch, keyboard_module):
 
 
 def test_prompt_hotkey_with_keyboard(monkeypatch, capsys):
-    called = {}
+    """Ensure interactive capture records keys until Enter is pressed."""
 
-    def read_hotkey(*, suppress=False):
-        called["suppress"] = suppress
+    calls = {}
+
+    events = [
+        types.SimpleNamespace(event_type="down", name="ctrl"),
+        types.SimpleNamespace(event_type="down", name="h"),
+        types.SimpleNamespace(event_type="up", name="h"),
+        types.SimpleNamespace(event_type="up", name="ctrl"),
+        types.SimpleNamespace(event_type="down", name="enter"),
+    ]
+
+    def record(stop_key):
+        calls["stop_key"] = stop_key
+        return events
+
+    def get_hotkey_name(keys):
+        calls["keys"] = keys
         return "ctrl+h"
 
-    dummy_keyboard = types.SimpleNamespace(read_hotkey=read_hotkey)
+    dummy_keyboard = types.SimpleNamespace(record=record, get_hotkey_name=get_hotkey_name)
     cli_mod = reload_cli(monkeypatch, dummy_keyboard)
     result = cli_mod.prompt_hotkey("Toggle hotkey", "ctrl+a")
     assert result == "ctrl+h"
-    assert called["suppress"] is True
+    assert calls["stop_key"] == "enter"
+    assert calls["keys"] == ["ctrl", "h"]
     out = capsys.readouterr().out
-    assert "Toggle hotkey [ctrl+a]:" in out
+    assert "Toggle hotkey [ctrl+a] (press combination then Enter):" in out
     assert "ctrl+h" in out
 
 
