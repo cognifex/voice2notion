@@ -7,7 +7,9 @@ The :mod:`keyboard` package expects English key names like ``ctrl`` and
 ``strg`` or ``umschalt`` which would otherwise raise a ``ValueError``.
 
 ``normalize_hotkey`` replaces known localised aliases with the canonical names
-understood by the ``keyboard`` library.
+understood by the ``keyboard`` library.  ``is_modifier_combo`` detects
+combinations that consist solely of modifier keys and ``is_valid_hotkey``
+accepts everything else.
 """
 
 from typing import Iterable, Optional
@@ -58,3 +60,9 @@ def is_modifier_combo(hotkey: str) -> bool:
 
     parts = normalize_hotkey(hotkey).split("+") if hotkey else []
     return bool(parts) and all(part in MODIFIER_KEYS for part in parts)
+
+
+def is_valid_hotkey(hotkey: str) -> bool:
+    """Return ``True`` when *hotkey* includes a non-modifier key."""
+
+    return not is_modifier_combo(hotkey)

@@ -12,13 +12,8 @@ from pathlib import Path
 from typing import Optional
 import logging
 
-try:  # pragma: no cover - used only when configuring hotkeys
-    import keyboard
-except Exception:  # pragma: no cover
-    keyboard = None  # type: ignore
-
 from .config import Config
-from .hotkeys import normalize_hotkey
+from .hotkeys import normalize_hotkey, is_valid_hotkey
 from .pipeline import transcribe_from_recorder
 from .recorder import recorder, register_hotkeys
 from .transcriber import DoubleTranscriber, Model
@@ -46,28 +41,20 @@ def _flush_stdin() -> None:
 
 
 def prompt_hotkey(label: str, current: str) -> str:
-    """Prompt the user for a hotkey and normalise the result.
+    """Prompt the user for a hotkey string.
 
-    The function prefers ``keyboard.read_hotkey`` so the user can simply press
-    the desired combination.  When ``keyboard`` isn't available or the user
-    types a value manually we still normalise common localised key names such as
-    ``strg`` or ``umschalt``.
+    Users type combinations such as ``ctrl+shift+space``.  Localised key names
+    like ``strg`` or ``umschalt`` are accepted and normalised.  The prompt keeps
+    asking until a non-modifier key is included.
     """
 
-    if keyboard is None:
-        # Fallback to manual typing when ``keyboard`` isn't installed
-        return normalize_hotkey(input(f"{label} [{current}]: ") or current)
-
-    print(f"{label} [{current}] (press keys then Enter): ", end="", flush=True)
-    events = keyboard.record(until="enter", suppress=True)
-    combo = keyboard.get_hotkey_name(events[:-1])
-    if not combo:
-        print()
-        return current
-
-    print(combo)
-    _flush_stdin()
-    return normalize_hotkey(combo)
+    while True:
+        _flush_stdin()
+        raw = input(f"{label} [{current}]: ")
+        hotkey = normalize_hotkey(raw or current)
+        if is_valid_hotkey(hotkey):
+            return hotkey
+        print("Please include a non-modifier key (e.g. ctrl+shift+s).", flush=True)
 
 
 def configure(
@@ -87,8 +74,8 @@ def configure(
         _flush_stdin()
         return input(f"{label} [{current}]: ") or current
 
-    toggle_key = toggle_key or prompt_hotkey("Toggle hotkey", cfg.toggle_key)
-    hold_key = hold_key or prompt_hotkey("Hold hotkey", cfg.hold_key)
+    toggle_key = normalize_hotkey(toggle_key) if toggle_key else prompt_hotkey("Toggle hotkey", cfg.toggle_key)
+    hold_key = normalize_hotkey(hold_key) if hold_key else prompt_hotkey("Hold hotkey", cfg.hold_key)
     fast_model = fast_model or prompt("Fast model", cfg.fast_model)
     precise_model = precise_model or prompt("Precise model", cfg.precise_model)
     if chunk_seconds is None:

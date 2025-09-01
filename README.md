@@ -32,12 +32,12 @@ python -m cursor_tool --verbose    # same but with debug logging
 After launching, the command line displays which hotkeys to use and prints the
 transcription once recording stops.
 
-When configuring, press the desired key combinations (or hit Enter to keep
-the current value) and the chosen hotkeys will be displayed in a readable
-form.  Manual input also works and common localised names such as
-``strg`` (``ctrl``) or ``umschalt`` (``shift``) are automatically
-normalised.  If the ``keyboard`` package is unavailable, the tool falls
-back to ``pynput`` for handling them.
+When configuring, type combinations like ``ctrl+shift+space`` (or hit Enter to
+keep the current value).  Localised names such as ``strg`` (``ctrl``) or
+``umschalt`` (``shift``) are normalised automatically and each hotkey must
+contain at least one non-modifier key.  At runtime the tool uses the
+``keyboard`` package to listen for hotkeys and falls back to ``pynput`` when
+``keyboard`` isn't available.
 
 The default configuration is stored in ``~/.cursor_tool.json``.  During
 runtime the fast model's output is injected directly at the cursor while

@@ -1,4 +1,4 @@
-from cursor_tool.hotkeys import normalize_hotkey, is_modifier_combo
+from cursor_tool.hotkeys import normalize_hotkey, is_modifier_combo, is_valid_hotkey
 
 
 def test_normalize_hotkey_aliases():
@@ -14,3 +14,8 @@ def test_normalize_hotkey_strips_punctuation():
 def test_is_modifier_combo():
     assert is_modifier_combo("ctrl+shift") is True
     assert is_modifier_combo("ctrl+q") is False
+
+
+def test_is_valid_hotkey():
+    assert is_valid_hotkey("ctrl+s") is True
+    assert is_valid_hotkey("ctrl+shift") is False
