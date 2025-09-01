@@ -105,8 +105,15 @@ def run(fast_model: Model | None = None, precise_model: Model | None = None) -> 
     """Load config, register hotkeys and process audio once recording stops."""
 
     cfg = Config.load()
-    register_hotkeys(cfg.toggle_key, cfg.hold_key)
+    print("Loading models...", flush=True)
     fast = fast_model or load_faster_whisper(cfg.fast_model)
     precise = precise_model or load_faster_whisper(cfg.precise_model)
+    register_hotkeys(cfg.toggle_key, cfg.hold_key)
+    msg = f"Press {cfg.toggle_key} to start/stop recording"
+    if cfg.hold_key and cfg.hold_key != cfg.toggle_key:
+        msg += f" or hold {cfg.hold_key} to talk"
+    print(msg + ".")
     transcriber = DoubleTranscriber(fast, precise, on_fast=insert_text)
-    return transcribe_from_recorder(recorder, transcriber)
+    text = transcribe_from_recorder(recorder, transcriber)
+    print(text)
+    return text

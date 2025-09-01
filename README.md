@@ -28,6 +28,8 @@ pip install -r requirements.txt
 python -m cursor_tool --configure  # set up hotkeys and model names
 python -m cursor_tool              # start the recorder and transcriber
 ```
+After launching, the command line displays which hotkeys to use and prints the
+transcription once recording stops.
 
 When configuring, press the desired key combinations (or hit Enter to keep
 the current value) and the chosen hotkeys will be displayed in a readable
