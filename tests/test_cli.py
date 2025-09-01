@@ -15,32 +15,48 @@ def reload_cli(monkeypatch, keyboard_module):
 
 
 def test_prompt_hotkey_with_keyboard(monkeypatch, capsys):
-    """Ensure interactive capture uses ``read_hotkey`` and prints the result."""
+    called: dict[str, bool] = {}
 
-    calls = {}
-
-    def read_hotkey(suppress=True):
-        calls["suppress"] = suppress
+    def read_hotkey(*, suppress=False):
+        called["read_hotkey"] = suppress
         return "ctrl+h"
 
-    dummy_keyboard = types.SimpleNamespace(read_hotkey=read_hotkey, _pressed_events=set())
+    def read_key(*, suppress=False):
+        called["read_key"] = suppress
+        return "enter"
+
+    dummy_keyboard = types.SimpleNamespace(
+        read_hotkey=read_hotkey, read_key=read_key, _pressed_events=set()
+    )
     cli_mod = reload_cli(monkeypatch, dummy_keyboard)
     result = cli_mod.prompt_hotkey("Toggle hotkey", "ctrl+a")
     assert result == "ctrl+h"
-    assert calls["suppress"] is True
+    assert called["read_hotkey"] is True
+    assert called["read_key"] is True
     out = capsys.readouterr().out
-    assert "Toggle hotkey [ctrl+a] (press combination or Enter to keep):" in out
+    assert "Toggle hotkey [ctrl+a] (press hotkey, then ENTER to confirm):" in out
     assert "ctrl+h" in out
 
 
 def test_prompt_hotkey_enter_keeps_current(monkeypatch, capsys):
-    def read_hotkey(suppress=True):
+    called = {}
+
+    def read_hotkey(*, suppress=False):
+        called["read_hotkey"] = suppress
         return "enter"
 
-    dummy_keyboard = types.SimpleNamespace(read_hotkey=read_hotkey, _pressed_events=set())
+    def read_key(*, suppress=False):
+        called["read_key"] = suppress
+        return "enter"
+
+    dummy_keyboard = types.SimpleNamespace(
+        read_hotkey=read_hotkey, read_key=read_key, _pressed_events=set()
+    )
     cli_mod = reload_cli(monkeypatch, dummy_keyboard)
     result = cli_mod.prompt_hotkey("Toggle hotkey", "ctrl+a")
     assert result == "ctrl+a"
+    assert called["read_hotkey"] is True
+    assert "read_key" not in called
 
 
 def test_prompt_hotkey_fallback(monkeypatch):

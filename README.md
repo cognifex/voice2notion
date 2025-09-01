@@ -29,10 +29,11 @@ python -m cursor_tool --configure  # set up hotkeys and model names
 python -m cursor_tool              # start the recorder and transcriber
 ```
 
-When configuring, press the desired key combination and release it to
-confirm. Press Enter without a combination to keep the current value. If
-the ``keyboard`` package is unavailable, you can type the shortcuts
-manually and the tool falls back to ``pynput`` for handling them.
+When configuring, press the desired key combination and then hit ``Enter``
+to confirm. Pressing ``Enter`` alone keeps the current value. The chosen
+hotkeys are displayed in a readable form. If the ``keyboard`` package is
+unavailable, you can type the shortcuts manually and the tool falls back to
+``pynput`` for handling them.
 
 After the models finish loading, the tool prints the active hotkeys so you
 know how to start and stop recording.

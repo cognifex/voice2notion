@@ -27,10 +27,12 @@ from .models import load_faster_whisper
 def prompt_hotkey(label: str, current: str) -> str:
     """Prompt for a hotkey and return it in a human-readable form.
 
-    The user presses the desired key combination and releases it to
-    confirm.  Pressing Enter alone keeps the current value.  Waiting for
-    all keys to be released before listening for a new combination avoids
-    stray modifiers leaking into subsequent prompts.
+    The user presses the desired key combination and then hits ``Enter`` to
+    confirm. Pressing ``Enter`` without any combination keeps the current
+    value. Waiting for all keys to be released before listening for a new
+    combination avoids stray modifiers leaking into subsequent prompts. The
+    extra ``read_key`` call consumes the confirmation keystroke so the next
+    prompt starts cleanly.
     """
 
     if keyboard is None:
@@ -38,7 +40,7 @@ def prompt_hotkey(label: str, current: str) -> str:
         return input(f"{label} [{current}]: ") or current
 
     print(
-        f"{label} [{current}] (press combination or Enter to keep): ",
+        f"{label} [{current}] (press hotkey, then ENTER to confirm): ",
         end="",
         flush=True,
     )
@@ -53,7 +55,7 @@ def prompt_hotkey(label: str, current: str) -> str:
     if hotkey == "enter":
         print()
         return current
-
+    keyboard.read_key(suppress=True)  # consume confirmation
     print(hotkey)
     return hotkey
 
