@@ -32,7 +32,7 @@ python -m cursor_tool --verbose    # same but with debug logging
 After launching, the command line displays which hotkeys to use and prints the
 transcription once recording stops.
 
-When configuring, press combinations like ``ctrl+shift+space`` (or hit Enter to
+When configuring, type combinations like ``ctrl+shift+space`` (or hit Enter to
 keep the current value).  Localised names such as ``strg`` (``ctrl``) or
 ``umschalt`` (``shift``) are normalised automatically and each hotkey must
 contain at least one non-modifier key.  At runtime the tool uses the

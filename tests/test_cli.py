@@ -6,20 +6,18 @@ from cursor_tool import cli
 
 
 def test_prompt_hotkey_normalizes(monkeypatch):
-    monkeypatch.setattr(cli.keyboard, "read_hotkey", lambda suppress=True: "strg+y")
+    monkeypatch.setattr("builtins.input", lambda prompt="": "strg+y")
     assert cli.prompt_hotkey("Toggle hotkey", "ctrl+a") == "ctrl+y"
 
 
 def test_prompt_hotkey_reprompts_invalid(monkeypatch):
     inputs = iter(["ctrl+shift", "ctrl+h"])
-    monkeypatch.setattr(cli.keyboard, "read_hotkey", lambda suppress=True: next(inputs))
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(inputs))
     assert cli.prompt_hotkey("Toggle hotkey", "ctrl+a") == "ctrl+h"
 
 
 def test_configure_reads_values(monkeypatch, tmp_path):
-    hotkeys = iter(["ctrl+t", "ctrl+h"])
-    monkeypatch.setattr(cli.keyboard, "read_hotkey", lambda suppress=True: next(hotkeys))
-    stdin = StringIO("fast\nprecise\n4\nde\n")
+    stdin = StringIO("ctrl+t\nctrl+h\nfast\nprecise\n4\nde\n")
     monkeypatch.setattr("builtins.input", lambda prompt="": stdin.readline().rstrip("\n"))
     cfg = cli.configure(path=tmp_path / "cfg.json")
     assert cfg.fast_model == "fast"
