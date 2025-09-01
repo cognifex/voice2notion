@@ -25,6 +25,7 @@ from .models import load_faster_whisper
 
 
 def prompt_hotkey(label: str, current: str) -> str:
+
     """Prompt user to press a hotkey and return its string representation."""
 
     if keyboard is None:
@@ -36,6 +37,7 @@ def prompt_hotkey(label: str, current: str) -> str:
     if hotkey == "enter":
         print()
         return current
+
     print(hotkey)
     return hotkey
 
@@ -82,4 +84,6 @@ def run(fast_model: Model | None = None, precise_model: Model | None = None) -> 
     fast = fast_model or load_faster_whisper(cfg.fast_model)
     precise = precise_model or load_faster_whisper(cfg.precise_model)
     transcriber = DoubleTranscriber(fast, precise, on_fast=insert_text)
+    hold_msg = f" or hold {cfg.hold_key}" if cfg.hold_key else ""
+    print(f"Ready. Press {cfg.toggle_key} to start/stop recording{hold_msg}.")
     return transcribe_from_recorder(recorder, transcriber)
