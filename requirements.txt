@@ -3,6 +3,7 @@ notion-client
 flask
 sounddevice
 keyboard
+pynput
 faster-whisper
 numpy
 pyinstaller

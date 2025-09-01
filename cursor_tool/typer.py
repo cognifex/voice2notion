@@ -7,6 +7,11 @@ try:  # pragma: no cover - patched in tests
 except Exception:  # pragma: no cover
     keyboard = None  # type: ignore
 
+try:  # pragma: no cover
+    from pynput import keyboard as pynput_keyboard
+except Exception:  # pragma: no cover
+    pynput_keyboard = None  # type: ignore
+
 from .active_window import is_text_field_focused
 
 
@@ -19,8 +24,13 @@ def insert_text(text: str) -> None:
     method.
     """
 
-    if keyboard is None:  # pragma: no cover
-        raise RuntimeError("keyboard not available")
     if not is_text_field_focused():  # pragma: no branch - simple guard
         return
-    keyboard.write(text)
+    if keyboard is not None:
+        keyboard.write(text)
+        return
+    if pynput_keyboard is not None:  # pragma: no cover - simplified fallback
+        controller = pynput_keyboard.Controller()
+        controller.type(text)
+        return
+    raise RuntimeError("keyboard not available")

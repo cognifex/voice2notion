@@ -11,12 +11,33 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
+try:  # pragma: no cover - used only when configuring hotkeys
+    import keyboard
+except Exception:  # pragma: no cover
+    keyboard = None  # type: ignore
+
 from .config import Config
 from .pipeline import transcribe_from_recorder
 from .recorder import recorder, register_hotkeys
 from .transcriber import DoubleTranscriber, Model
 from .typer import insert_text
 from .models import load_faster_whisper
+
+
+def prompt_hotkey(label: str, current: str) -> str:
+    """Prompt user to press a hotkey and return its string representation."""
+
+    if keyboard is None:
+        # Fallback to manual typing when ``keyboard`` isn't installed
+        return input(f"{label} [{current}]: ") or current
+
+    print(f"{label} [{current}]: ", end="", flush=True)
+    hotkey = keyboard.read_hotkey(suppress=False)
+    if hotkey == "enter":
+        print()
+        return current
+    print(hotkey)
+    return hotkey
 
 
 def configure(
@@ -34,8 +55,8 @@ def configure(
     def prompt(label: str, current: str) -> str:
         return input(f"{label} [{current}]: ") or current
 
-    toggle_key = toggle_key or prompt("Toggle hotkey", cfg.toggle_key)
-    hold_key = hold_key or prompt("Hold hotkey", cfg.hold_key)
+    toggle_key = toggle_key or prompt_hotkey("Toggle hotkey", cfg.toggle_key)
+    hold_key = hold_key or prompt_hotkey("Hold hotkey", cfg.hold_key)
     fast_model = fast_model or prompt("Fast model", cfg.fast_model)
     precise_model = precise_model or prompt("Precise model", cfg.precise_model)
     if chunk_seconds is None:
