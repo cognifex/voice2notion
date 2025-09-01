@@ -101,10 +101,22 @@ class Recorder:
         logging.debug("register hotkeys toggle=%s hold=%s", toggle, hold)
 
         if keyboard is not None:
-            keyboard.add_hotkey(toggle, self.toggle_recording)
+            keyboard.add_hotkey(
+                toggle, self.toggle_recording, suppress=True, trigger_on_release=True
+            )
             if hold:
-                keyboard.add_hotkey(hold, self.start_recording)
-                keyboard.add_hotkey(hold, self.stop_recording, trigger_on_release=True)
+                def press_cb(_event):
+                    if not self._hold_active:
+                        self._hold_active = True
+                        self.start_recording()
+
+                def release_cb(_event):
+                    if self._hold_active:
+                        self._hold_active = False
+                        self.stop_recording()
+
+                keyboard.on_press_key(hold, press_cb, suppress=True)
+                keyboard.on_release_key(hold, release_cb, suppress=True)
             return
 
         if pynput_keyboard is None:  # pragma: no cover

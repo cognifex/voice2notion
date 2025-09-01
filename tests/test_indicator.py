@@ -23,6 +23,15 @@ def indicator_module(monkeypatch):
         def attributes(self, *_):
             pass
 
+        def geometry(self, *_):
+            pass
+
+        def configure(self, *_ , **__):
+            pass
+
+        def wm_attributes(self, *_ , **__):
+            pass
+
         def mainloop(self):
             pass
 
@@ -77,4 +86,4 @@ def test_start_stop_indicator(indicator_module):
     assert ind.visible is True
     ind.stop()
     assert ind.visible is True
-    assert beeps == [(880, 150), (440, 150)]
+    assert beeps == []

@@ -75,6 +75,7 @@ def configure(
     fast_model: Optional[str] = None,
     precise_model: Optional[str] = None,
     chunk_seconds: Optional[float] = None,
+    language: Optional[str] = None,
 ) -> Config:
     """Interactively update and persist user configuration."""
 
@@ -91,6 +92,7 @@ def configure(
     if chunk_seconds is None:
         chunk_input = prompt("Chunk length (seconds)", str(cfg.chunk_seconds))
         chunk_seconds = float(chunk_input)
+    language = language or prompt("Language", cfg.language)
 
     cfg = Config(
         toggle_key=toggle_key,
@@ -98,6 +100,7 @@ def configure(
         fast_model=fast_model,
         precise_model=precise_model,
         chunk_seconds=chunk_seconds,
+        language=language,
     )
     cfg.save(path)
     return cfg
@@ -115,8 +118,8 @@ def run(
     cfg = Config.load()
     logging.debug("configuration loaded: %s", cfg)
     print("Loading models...", flush=True)
-    fast = fast_model or load_faster_whisper(cfg.fast_model)
-    precise = precise_model or load_faster_whisper(cfg.precise_model)
+    fast = fast_model or load_faster_whisper(cfg.fast_model, language=cfg.language)
+    precise = precise_model or load_faster_whisper(cfg.precise_model, language=cfg.language)
     indicator.show()
     register_hotkeys(cfg.toggle_key, cfg.hold_key)
     msg = f"Press {cfg.toggle_key} to start/stop recording"

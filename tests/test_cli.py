@@ -1,8 +1,8 @@
+from io import StringIO
 import importlib
 import sys
 import types
 from pathlib import Path
-from io import StringIO
 
 import pytest
 
@@ -36,7 +36,7 @@ def test_configure_consumes_trailing_enter(monkeypatch, tmp_path):
     dummy_keyboard = types.SimpleNamespace(read_hotkey=lambda suppress=False: next(hotkeys))
     cli_mod = reload_cli(monkeypatch, dummy_keyboard)
 
-    stdin = StringIO("\nfast\nprecise\n4\n")
+    stdin = StringIO("\nfast\nprecise\n4\nde\n")
     monkeypatch.setattr(sys, "stdin", stdin)
 
     calls = {"n": 0}
@@ -53,6 +53,7 @@ def test_configure_consumes_trailing_enter(monkeypatch, tmp_path):
     assert cfg.fast_model == "fast"
     assert cfg.precise_model == "precise"
     assert cfg.chunk_seconds == 4.0
+    assert cfg.language == "de"
 
 
 def test_run_prints_status(monkeypatch, capsys):
@@ -63,10 +64,14 @@ def test_run_prints_status(monkeypatch, capsys):
         fast_model="fast",
         precise_model="precise",
         chunk_seconds=5.0,
+        language="de",
     )
     monkeypatch.setattr(cli_mod.Config, "load", lambda path=None: cfg)
     monkeypatch.setattr(cli_mod, "register_hotkeys", lambda t, h: None)
-    monkeypatch.setattr(cli_mod, "load_faster_whisper", lambda name: (lambda _: name))
+    def fake_loader(name, *, language):
+        return lambda _: f"{name}-{language}"
+
+    monkeypatch.setattr(cli_mod, "load_faster_whisper", fake_loader)
     monkeypatch.setattr(
         cli_mod, "transcribe_from_recorder", lambda rec, transcriber: "result"
     )

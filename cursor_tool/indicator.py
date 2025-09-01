@@ -14,7 +14,7 @@ except Exception:  # pragma: no cover - winsound only on Windows
 class RecordingIndicator:
     """Small overlay and optional beeps indicating recording state."""
 
-    def __init__(self, *, beep: bool = True) -> None:
+    def __init__(self, *, beep: bool = False) -> None:
         self._beep = beep
         self._thread: threading.Thread | None = None
         self._root: "tk.Tk" | None = None
@@ -43,7 +43,13 @@ class RecordingIndicator:
         self._root = root
         root.overrideredirect(True)
         root.attributes("-topmost", True)
-        canvas = tk.Canvas(root, width=20, height=20, highlightthickness=0)
+        root.geometry("20x20+10+10")
+        root.configure(bg="black")
+        try:
+            root.wm_attributes("-transparentcolor", "black")
+        except Exception:
+            pass
+        canvas = tk.Canvas(root, width=20, height=20, highlightthickness=0, bg="black")
         canvas.pack()
         self._canvas = canvas
         self._oval = canvas.create_oval(2, 2, 18, 18, fill=self._color, outline="")
