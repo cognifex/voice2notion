@@ -32,12 +32,8 @@ def recorder_module(monkeypatch):
     callbacks: dict[str, types.FunctionType] = {}
 
     def add_hotkey(key, cb, suppress=False, trigger_on_release=False):
-        if key == "ctrl+alt+r":
-            callbacks["toggle"] = cb
-        elif trigger_on_release:
-            callbacks["release"] = cb
-        else:
-            callbacks["press"] = cb
+        suffix = "release" if trigger_on_release else "press"
+        callbacks[f"{key}-{suffix}"] = cb
 
     dummy_keyboard.add_hotkey = add_hotkey
 
@@ -63,14 +59,15 @@ def test_hotkey_callbacks(recorder_module):
     module, callbacks = recorder_module
     module.register_hotkeys("ctrl+alt+r", "shift+s")
 
-    callbacks["toggle"]()
+    callbacks["ctrl+alt+r-release"]()
     assert module.recorder.is_recording is True
-    callbacks["toggle"]()
+    callbacks["ctrl+alt+r-release"]()
     assert module.recorder.is_recording is False
 
-    callbacks["press"]()
+    callbacks["shift+s-press"]()
+    callbacks["shift+s-press"]()
     assert module.recorder.is_recording is True
-    callbacks["release"]()
+    callbacks["shift+s-release"]()
     assert module.recorder.is_recording is False
 
 

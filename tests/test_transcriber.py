@@ -38,3 +38,23 @@ def test_double_transcriber_invokes_models_and_callbacks():
     assert fast_emitted == ["fast-a", "fast-b"]
     assert precise_emitted == ["precise-a", "precise-a precise-b"]
     assert final == "precise-a precise-b"
+
+
+def test_fast_callbacks_not_blocked(monkeypatch):
+    import time
+
+    events: list[str] = []
+
+    def fast_model(chunk: bytes) -> str:
+        events.append("fast")
+        return "f"
+
+    def slow_model(chunk: bytes) -> str:
+        time.sleep(0.1)
+        events.append("precise")
+        return "p"
+
+    dt = DoubleTranscriber(fast_model, slow_model, on_fast=lambda _t: events.append("emit"))
+    dt.transcribe_chunks([b"x"])
+    assert events[:2] == ["fast", "emit"]
+    assert events[2] == "precise"

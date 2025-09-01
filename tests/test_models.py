@@ -14,8 +14,9 @@ def test_load_faster_whisper_calls_library(monkeypatch):
         def __init__(self, name, device, compute_type):
             self.called_with = (name, device, compute_type)
 
-        def transcribe(self, array, language="en"):
+        def transcribe(self, array, language="en", task="transcribe"):
             called["language"] = language
+            called["task"] = task
             return fake_segments, None
 
     dummy_cls = MagicMock(side_effect=DummyModel)
@@ -28,3 +29,4 @@ def test_load_faster_whisper_calls_library(monkeypatch):
     dummy_cls.assert_called_with("tiny", device="cpu", compute_type="int8")
     assert result == "hi there"
     assert called["language"] == "de"
+    assert called["task"] == "transcribe"

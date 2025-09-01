@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Callable, Iterable, List, Sequence, Tuple
+from concurrent.futures import ThreadPoolExecutor
 
 from .diff import merge_overlaps
 
@@ -99,11 +100,15 @@ class DoubleTranscriber:
         """
 
         self._precise_text = ""
-        for chunk in chunks:
-            fast_text = self.fast_model(chunk)
-            self._emit_fast(fast_text)
-            precise_chunk = self.precise_model(chunk)
-            self._precise_text = self.merge(self._precise_text, precise_chunk)
-            if self.on_precise:
-                self.on_precise(self._precise_text)
+        futures = []
+        with ThreadPoolExecutor(max_workers=1) as ex:
+            for chunk in chunks:
+                fast_text = self.fast_model(chunk)
+                self._emit_fast(fast_text)
+                futures.append(ex.submit(self.precise_model, chunk))
+            for fut in futures:
+                precise_chunk = fut.result()
+                self._precise_text = self.merge(self._precise_text, precise_chunk)
+                if self.on_precise:
+                    self.on_precise(self._precise_text)
         return self._precise_text

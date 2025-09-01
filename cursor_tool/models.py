@@ -31,7 +31,7 @@ def load_faster_whisper(name: str, device: str = "cpu", *, language: str = "de")
 
             ints = pyarray.array("h", audio)
             array = [i / 32768.0 for i in ints]
-        segments, _ = model.transcribe(array, language=language)
+        segments, _ = model.transcribe(array, language=language, task="transcribe")
         return " ".join(seg.text.strip() for seg in segments)
 
     return _transcribe

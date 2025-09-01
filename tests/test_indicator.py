@@ -19,6 +19,9 @@ def indicator_module(monkeypatch):
         def attributes(self, *_):
             pass
 
+        def lift(self):
+            pass
+
         def geometry(self, *_):
             pass
 

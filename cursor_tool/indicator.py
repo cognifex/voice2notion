@@ -29,6 +29,10 @@ class RecordingIndicator:
         root.overrideredirect(True)
         root.attributes("-topmost", True)
         try:
+            root.lift()
+        except Exception:
+            pass
+        try:
             root.attributes("-transparentcolor", "black")
         except Exception:
             pass

@@ -101,11 +101,23 @@ class Recorder:
         logging.debug("register hotkeys toggle=%s hold=%s", toggle, hold)
 
         if keyboard is not None:
-            keyboard.add_hotkey(toggle, self.toggle_recording, suppress=True)
+            keyboard.add_hotkey(
+                toggle, self.toggle_recording, suppress=True, trigger_on_release=True
+            )
             if hold:
-                keyboard.add_hotkey(hold, self.start_recording, suppress=True)
+                def _hold_start():
+                    if not self._hold_active:
+                        self._hold_active = True
+                        self.start_recording()
+
+                def _hold_stop():
+                    if self._hold_active:
+                        self._hold_active = False
+                        self.stop_recording()
+
+                keyboard.add_hotkey(hold, _hold_start, suppress=True)
                 keyboard.add_hotkey(
-                    hold, self.stop_recording, suppress=True, trigger_on_release=True
+                    hold, _hold_stop, suppress=True, trigger_on_release=True
                 )
             return
 
