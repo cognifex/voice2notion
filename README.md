@@ -10,8 +10,8 @@ corrections.
 * Global hotkeys to start/stop recording or hold-to-talk
 * Real-time transcription with a fast model
 * Higher quality corrections in the background
-* Small overlay shows a red dot when idle and turns green while recording
-* Persistent configuration for hotkeys, model names and chunk length
+* Small always-on-top overlay shows a red dot when idle and turns green while recording
+* Persistent configuration for hotkeys, model names, chunk length and language (default: German)
 * Helper to package the tool as a standalone Windows executable
 
 ## Installation

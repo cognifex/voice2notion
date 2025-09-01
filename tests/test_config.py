@@ -11,10 +11,11 @@ def test_load_defaults(tmp_path):
     assert cfg.toggle_key == "ctrl+shift+space"
     assert cfg.fast_model == "tiny"
     assert cfg.chunk_seconds == 5.0
+    assert cfg.language == "de"
 
 def test_save_and_load(tmp_path):
     path = tmp_path / "config.json"
-    cfg = Config(toggle_key="F9", fast_model="tiny", chunk_seconds=3.5)
+    cfg = Config(toggle_key="F9", fast_model="tiny", chunk_seconds=3.5, language="en")
     cfg.save(path)
     loaded = Config.load(path)
     assert loaded == cfg

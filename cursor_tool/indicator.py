@@ -5,32 +5,17 @@ try:
 except Exception:  # pragma: no cover - tkinter might not be installed
     tk = None
 
-try:
-    import winsound
-except Exception:  # pragma: no cover - winsound only on Windows
-    winsound = None
-
 
 class RecordingIndicator:
-    """Small overlay and optional beeps indicating recording state."""
+    """Small always-on-top overlay indicating recording state."""
 
-    def __init__(self, *, beep: bool = True) -> None:
-        self._beep = beep
+    def __init__(self) -> None:
         self._thread: threading.Thread | None = None
         self._root: "tk.Tk" | None = None
         self._canvas: "tk.Canvas" | None = None
         self._oval: int | None = None
         self._visible = False
         self._color = "red"
-
-    # sound helpers -----------------------------------------------------
-    def _play_start(self) -> None:
-        if self._beep and winsound:
-            winsound.Beep(880, 150)
-
-    def _play_stop(self) -> None:
-        if self._beep and winsound:
-            winsound.Beep(440, 150)
 
     # visual helpers ----------------------------------------------------
     def _run(self) -> None:
@@ -43,7 +28,13 @@ class RecordingIndicator:
         self._root = root
         root.overrideredirect(True)
         root.attributes("-topmost", True)
-        canvas = tk.Canvas(root, width=20, height=20, highlightthickness=0)
+        try:
+            root.attributes("-transparentcolor", "black")
+        except Exception:
+            pass
+        root.geometry("20x20+10+10")
+        root.configure(bg="black")
+        canvas = tk.Canvas(root, width=20, height=20, highlightthickness=0, bg="black")
         canvas.pack()
         self._canvas = canvas
         self._oval = canvas.create_oval(2, 2, 18, 18, fill=self._color, outline="")
@@ -70,18 +61,22 @@ class RecordingIndicator:
         if tk:
             self._thread = threading.Thread(target=self._run, daemon=True)
             self._thread.start()
+            # wait briefly for Tk to initialise
+            import time
+            for _ in range(50):
+                if self._root is not None:
+                    break
+                time.sleep(0.01)
 
     def start(self) -> None:
-        """Turn the indicator green and play start sound."""
+        """Turn the indicator green."""
         self.show()
         self._update("green")
-        self._play_start()
 
     def stop(self) -> None:
-        """Turn the indicator red and play stop sound."""
+        """Turn the indicator red."""
         self.show()
         self._update("red")
-        self._play_stop()
 
 
 indicator = RecordingIndicator()

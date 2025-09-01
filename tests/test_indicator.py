@@ -8,12 +8,8 @@ import pytest
 
 @pytest.fixture
 def indicator_module(monkeypatch):
-    beeps = []
+    colors: list[str] = []
 
-    def beep(freq, dur):
-        beeps.append((freq, dur))
-
-    dummy_winsound = types.SimpleNamespace(Beep=beep)
     dummy_tk = types.SimpleNamespace()
 
     class DummyRoot:
@@ -23,10 +19,13 @@ def indicator_module(monkeypatch):
         def attributes(self, *_):
             pass
 
-        def mainloop(self):
+        def geometry(self, *_):
             pass
 
-        def quit(self):
+        def configure(self, *_ , **__):
+            pass
+
+        def mainloop(self):
             pass
 
         def after(self, _delay, func):
@@ -42,8 +41,8 @@ def indicator_module(monkeypatch):
         def create_oval(self, *_, **__):
             return 1
 
-        def itemconfig(self, *_ , **__):
-            pass
+        def itemconfig(self, _id, *, fill):
+            colors.append(fill)
 
     dummy_tk.Tk = DummyRoot
     dummy_tk.Canvas = DummyCanvas
@@ -58,23 +57,20 @@ def indicator_module(monkeypatch):
             self.started = True
             self.target()
 
-    monkeypatch.setitem(sys.modules, "winsound", dummy_winsound)
-    monkeypatch.setitem(sys.modules, "tkinter", dummy_tk)
     monkeypatch.setattr("threading.Thread", DummyThread)
+    monkeypatch.setitem(sys.modules, "tkinter", dummy_tk)
     monkeypatch.syspath_prepend(str(Path(__file__).resolve().parents[1]))
     if "cursor_tool.indicator" in sys.modules:
         del sys.modules["cursor_tool.indicator"]
     module = importlib.import_module("cursor_tool.indicator")
-    yield module, beeps
+    yield module, colors
     if "cursor_tool.indicator" in sys.modules:
         del sys.modules["cursor_tool.indicator"]
 
 
 def test_start_stop_indicator(indicator_module):
-    module, beeps = indicator_module
+    module, colors = indicator_module
     ind = module.RecordingIndicator()
     ind.start()
-    assert ind.visible is True
     ind.stop()
-    assert ind.visible is True
-    assert beeps == [(880, 150), (440, 150)]
+    assert colors == ["green", "red"]

@@ -31,7 +31,7 @@ def recorder_module(monkeypatch):
     dummy_keyboard = types.SimpleNamespace()
     callbacks: dict[str, types.FunctionType] = {}
 
-    def add_hotkey(key, cb, trigger_on_release=False):
+    def add_hotkey(key, cb, suppress=False, trigger_on_release=False):
         if key == "ctrl+alt+r":
             callbacks["toggle"] = cb
         elif trigger_on_release:
