@@ -11,6 +11,7 @@ def test_load_defaults(tmp_path):
     assert cfg.toggle_key == "ctrl+shift+space"
     assert cfg.fast_model == "tiny"
     assert cfg.chunk_seconds == 5.0
+    assert cfg.language == "de"
 
 def test_save_and_load(tmp_path):
     path = tmp_path / "config.json"

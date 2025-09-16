@@ -10,6 +10,7 @@ DEFAULT_HOLD = "ctrl+space"
 DEFAULT_FAST_MODEL = "tiny"
 DEFAULT_PRECISE_MODEL = "base"
 DEFAULT_CHUNK_SECONDS = 5.0
+DEFAULT_LANGUAGE = "de"
 
 
 def default_config_path() -> Path:
@@ -26,6 +27,7 @@ class Config:
     fast_model: str = DEFAULT_FAST_MODEL
     precise_model: str = DEFAULT_PRECISE_MODEL
     chunk_seconds: float = DEFAULT_CHUNK_SECONDS
+    language: str = DEFAULT_LANGUAGE
 
     @classmethod
     def load(cls, path: Optional[Path] = None) -> "Config":

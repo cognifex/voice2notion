@@ -5,7 +5,7 @@ from __future__ import annotations
 from .transcriber import Model
 
 
-def load_faster_whisper(name: str, device: str = "cpu") -> Model:
+def load_faster_whisper(name: str, device: str = "cpu", *, language: str = "de") -> Model:
     """Return a callable that transcribes audio with ``faster-whisper``.
 
     The returned function accepts raw PCM ``bytes`` and returns the
@@ -31,7 +31,7 @@ def load_faster_whisper(name: str, device: str = "cpu") -> Model:
 
             ints = pyarray.array("h", audio)
             array = [i / 32768.0 for i in ints]
-        segments, _ = model.transcribe(array)
+        segments, _ = model.transcribe(array, language=language)
         return " ".join(seg.text.strip() for seg in segments)
 
     return _transcribe

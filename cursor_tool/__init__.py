@@ -15,7 +15,7 @@ from .config import Config, default_config_path
 from .cli import run, configure
 from .models import load_faster_whisper
 from .active_window import is_text_field_focused
-from .indicator import RecordingIndicator
+from .indicator import RecordingIndicator, indicator
 from .packager import build_executable
 
 __all__ = [
@@ -29,6 +29,7 @@ __all__ = [
     "insert_text",
     "is_text_field_focused",
     "RecordingIndicator",
+    "indicator",
     "Config",
     "default_config_path",
     "configure",

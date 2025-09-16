@@ -22,12 +22,17 @@ def main(argv: list[str] | None = None) -> None:
         action="store_true",
         help="run the interactive configuration wizard",
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="enable debug logging",
+    )
     args = parser.parse_args(argv)
 
     if args.configure:
         configure()
     else:
-        run()
+        run(verbose=args.verbose)
 
 
 if __name__ == "__main__":  # pragma: no cover - exercised via tests
